@@ -23,9 +23,7 @@ Press F2 to disable wallhack.
 ```
 ## Known issues
 * Offsets are outdated and need to be manually updated.
-* Other features may be outdated.
 * The program sometimes reads an invalid address in client_panorama.dll, causing the game to crash.
-* The hack may be detected by Valve Anti-Cheat.
 ## Disclaimer
 This project is for educational purposes only. Using it on a VAC-secured server will result in a ban.
 ## Author
