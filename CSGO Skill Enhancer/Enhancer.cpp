@@ -7,45 +7,46 @@
 * @version: 0.9
 */
 
-#include <windows.h>	// Probably not required. Using Win32 API is usually not advised.
-#include <iostream>		// Required for input / output streams.
+
+#include <windows.h>	// Required for DWORD. Using Win32 API is usually not advised.
+#include <iostream>	// Required for input / output streams.
 #include <TlHelp32.h>	// Required for Windows processes and modules.
-#include <string>		// Required for strings.
-#include <sstream>		// Required for string streams.
+#include <string>	// Required for strings.
+#include <sstream>	// Required for string streams.
 
 using namespace std;	// Not required.
 
 
-						/**
-						* Offsets declaration.
-						* CSGO offsets are avalaible here: https://github.com/frk1/hazedumper.
-						* TODO: use hazedumper to scan offsets programatically.
-						*/
-DWORD entityList = 0x4D07DD4;			// Enemies are entities.
-DWORD localPlayerO = 0xCF5A4C;			// Add to the client module to get local player entity.
-DWORD glowIndex = 0xA40C;				// Add to an entity to get the glow index of this entity.
-										//DWORD bSpotted = 0x93D;				// Unused. Get whether or not an entity is spotted (appears on radar) in boolean.
-DWORD bDormant = 0xED;					// Get whether or not an entity is dormant (alive / connected) in boolean.
+/**
+* Offsets declaration.
+* CSGO offsets are avalaible here: https://github.com/frk1/hazedumper.
+* TODO: use hazedumper to scan offsets programatically.
+*/
+DWORD entityList = 0x4D07DD4;		// Enemies are entities.
+DWORD localPlayerO = 0xCF5A4C;		// Add to the client module to get local player entity.
+DWORD glowIndex = 0xA40C;		// Add to an entity to get the glow index of this entity.
+//DWORD bSpotted = 0x93D;		// Unused. Get whether or not an entity is spotted (appears on radar) in boolean.
+DWORD bDormant = 0xED;			// Get whether or not an entity is dormant (alive / connected) in boolean.
 DWORD glowObjectManager = 0x5248228;	// Glow is used in various occasions in Gun Game modes.
-DWORD teamNum = 0xF4;					// Add to an entity to get the team number of this entity.
-DWORD localPlayer;						// Local player entity.
-DWORD client;							// client_panorama.dll module.
-DWORD teamId;							// Local player's team.
-DWORD glowPointer;						// Used on entities to make them glow.
+DWORD teamNum = 0xF4;			// Add to an entity to get the team number of this entity.
+DWORD localPlayer;			// Local player entity.
+DWORD client;				// client_panorama.dll module.
+DWORD teamId;				// Local player's team.
+DWORD glowPointer;			// Used on entities to make them glow.
 
 
-										/**
-										* ProcMem class.
-										* This class contains variables and templates used to read and write in process memory.
-										*/
+/**
+* ProcMem class.
+* This class contains variables and templates used to read and write in process memory.
+*/
 class ProcMem {
 protected:
 	HANDLE hProcess;	// A process handle is an integer that identifies a process.
 	DWORD dwPID;		// Used to get process ID with TH32.
 
 public:
-	ProcMem();			// Constructor.
-	~ProcMem();			// Destructor.
+	ProcMem();	// Constructor.
+	~ProcMem();	// Destructor.
 	int iSizeOfArray(int *iArray);
 
 	// Read template function.
@@ -125,7 +126,7 @@ void ProcMem::Process(char* ProcessName)
 			return;
 		}
 	while (Process32Next(hPID, &ProcEntry));
-	cout << "\ncsgo.exe process not found\n";	// TODO: csgo.exe shouldn't be mentioned here.
+	cout << "\ncsgo.exe process not found\n";
 	system("pause");
 	exit(0);
 }
@@ -145,7 +146,7 @@ DWORD ProcMem::Module(LPSTR ModuleName)
 			return (DWORD)mEntry.modBaseAddr;
 		}
 	while (Module32Next(hModule, &mEntry));
-	cout << "client_panorama.dll not found. Trying again..." << endl;	// TODO: client_panorama.dll shouldn't be mentioned here.
+	cout << "client_panorama.dll not found. Trying again..." << endl;
 	return 0;
 }
 
@@ -179,11 +180,11 @@ public:
 		}
 	}
 	static unsigned long __stdcall hx_thread(void*) {
-		client = PM.Module("client_panorama.dll");					// Get client_panorama.dll.
+		client = PM.Module("client_panorama.dll");			// Get client_panorama.dll.
 		glowPointer = PM.Read<DWORD>(client + glowObjectManager);	// Read glow.
 		localPlayer = PM.Read<DWORD>(client + localPlayerO);		// Read local player entity.
 		if (!localPlayer) return EXIT_FAILURE;
-		teamId = PM.Read<DWORD>(localPlayer + teamNum);				// Get local player's team.
+		teamId = PM.Read<DWORD>(localPlayer + teamNum);			// Get local player's team.
 		while (true) {
 			Sleep(50);
 			if (glowPointer != NULL) {
@@ -191,15 +192,15 @@ public:
 				// Loop through entities. Each entity looped through is mentioned as 'current player'.
 				for (int i = 0; i < 64; i++) {
 
-					// One of the Read accesses an invalid address and crashes csgo.exe process.
-					DWORD currentPlayer = PM.Read<int>(client + entityList + i * 0x10);			// Get current player entity.
+					// /!\ One of the Read sometimes accesses an invalid address and crashes csgo.exe process. /!\
+					DWORD currentPlayer = PM.Read<int>(client + entityList + i * 0x10);	// Get current player entity.
 					if (currentPlayer != NULL) {
-						DWORD currentPlayerTeamId = PM.Read<int>(currentPlayer + teamNum);		// Get current player's team.
+						DWORD currentPlayerTeamId = PM.Read<int>(currentPlayer + teamNum);	// Get current player's team.
 						DWORD currentPlayerGlowIndex = PM.Read<int>(currentPlayer + glowIndex);	// Get current player's glow index.
 						DWORD mObj = glowPointer;
 						DWORD mObj2 = currentPlayerGlowIndex;
 						bool currentPlayerDormant;
-						currentPlayerDormant = PM.Read<bool>(currentPlayer + bDormant);			// Get current player's dormant status.
+						currentPlayerDormant = PM.Read<bool>(currentPlayer + bDormant);		// Get current player's dormant status.
 
 																								// Check if current player is enemy and alive.
 						if (currentPlayerTeamId != teamId && currentPlayerDormant == false) {
@@ -233,7 +234,7 @@ int main() {
 	bool enabled = false;
 	HANDLE HX = NULL;
 	VirtualHX::engine_start();
-	Sleep(400);		// Useless in this case, but it's usually good to not print all messages at the same time.
+	Sleep(400);	// Useless in this case, but it's usually good to not print all messages at the same time.
 	cout << "F1 : ON/OFF..." << endl;
 	while (TRUE) {
 		Sleep(1);
