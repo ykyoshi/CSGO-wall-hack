@@ -1,4 +1,4 @@
-# CS:GO wallhack (deprecated)
+# CS:GO wall hack (deprecated)
 Simple wallhack for Counter-Strike: Global Offensive. Deprecated but can be fixed and/or parts of it can be used for another project.
 ## Getting Started
 Download the project and compile it.
